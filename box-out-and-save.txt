@@ -1,0 +1,24 @@
+dir = getDirectory("Choose a Directory ");
+setBatchMode(false);
+selections = getNumber("How many selections do you want to create?", 4); 
+roiManager("Reset"); 
+for(s=1; s<=selections; s++) { 
+	waitForUser("Create Selection " + s); 
+	run("Add to Manager"); 
+	} 
+
+output = dir+"Export"+File.separator;
+if(!File.exists(output)){
+	File.makeDirectory(output);
+	}
+mainTitle = getTitle();
+dotIndex = indexOf(mainTitle, "."); 
+fileTitle = substring(mainTitle, 0, dotIndex); 
+for (u=0; u<roiManager("count"); ++u) {
+	selectWindow(mainTitle);
+	roiManager("Select", u);
+    run("Duplicate...", "title=crop");
+    selectWindow("crop");
+    saveAs("Tiff", output+fileTitle+"_"+(u+1));
+    close();
+	}

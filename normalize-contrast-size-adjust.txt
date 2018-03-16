@@ -1,0 +1,94 @@
+requires("1.33s"); 
+dir = getDirectory("Choose a Directory "); 
+setBatchMode(true); 
+count = 0; 
+countFilesBNCSA(dir);
+dir3 = dir+"wScaleBar"+File.separator;
+File.makeDirectory(dir3);
+n = 0; 
+processFilesBNCSA(dir, dir3); 
+
+function countFilesBNCSA(dir) { 
+	list = getFileList(dir); 
+	for (i=0; i<list.length; i++) { 
+		if (endsWith(list[i], "/")) 
+			countFilesBNCSA(""+dir+list[i]);
+		else 
+			count++; 
+	} 
+}
+
+function processFilesBNCSA(dir, dir3) { 
+	list = getFileList(dir); 
+	for (i=0; i<list.length; i++) { 
+		if (endsWith(list[i], "/") && list[i] != "wScaleBar/" && list[i] != "woScaleBar/"){
+			processFilesBNCSA(""+dir+list[i], dir3); 
+		}
+		else { 
+			showProgress(n++, count); 
+			path = dir+list[i];
+			if (endsWith(path, ".tif") || endsWith(path,".TIF") || endsWith(path,".dm3")) {
+				processFileBNCSA(n,path,dir3); 
+			}
+		} 
+	} 
+}
+
+function processFileBNCSA(n,path,dir3) { 
+	open(path);
+	if(bitDepth() == 32){
+		run("16-bit");
+	}
+	if(bitDepth() == 16){
+		run("8-bit");
+	}
+	run("Enhance Contrast", "saturated=0.35");
+	getMinAndMax(min,max); // get display range
+    if (min != 0 && max != 255) {  // check if the display has been changed
+        run("Apply LUT"); 
+        }
+	run("Size...", "width=2000 constrain average interpolation=Bicubic");
+	percentHeightBar = 0.02; // % of image height
+	percentHeightFont = 0.03; // % of image height
+	percentWidth = 0.10; // % of image width
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	if(unit == "µm" || unit == "microns"){
+		if(pixelWidth < 0.001){
+			newSize = (1/pixelWidth)*(1e-3);
+ 			run("Set Scale...", "distance=newSize unit=nm");
+			}
+		if(pixelWidth >= 0.001){
+			resolution = 1 / pixelWidth; 
+			getDimensions(width, height, channels, slices, frames);
+			imageWidth = width / resolution;
+			imageHeight = height / resolution;
+			scaleBarWidthum = round(percentWidth * imageWidth);
+			if(scaleBarWidthum == 0){
+				scaleBarWidthum = 0.5;
+				}
+			scaleBarHeightum = percentHeightBar * height;
+			scaleBarFontum = percentHeightFont * height;
+			run("Scale Bar...", "width=&scaleBarWidthum height=&scaleBarHeightum font=&scaleBarFontum color=White background=None location=[Lower Left] bold");
+			}
+		}
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	if(unit == "nm") {
+		resolution = 1 / pixelWidth; 
+		getDimensions(width, height, channels, slices, frames);
+		imageWidth = width / resolution;
+		imageHeight = height / resolution;
+		scaleBarWidthnm = round(percentWidth * imageWidth);
+		scaleBarWidthnm = round(round(round(scaleBarWidthnm + 49) / 50) * 50);
+		if(scaleBarWidthnm <= 100){
+			imageWidth = width / resolution;
+			imageHeight = height / resolution;
+			scaleBarWidthnm = round(percentWidth * imageWidth);
+			scaleBarWidthnm = round(round(round(scaleBarWidthnm + 9) / 10) * 10);
+		 }
+		scaleBarHeightnm = percentHeightBar * height;
+		scaleBarFontnm = percentHeightFont * height;
+		run("Scale Bar...", "width=&scaleBarWidthnm height=&scaleBarHeightnm font=&scaleBarFontnm color=White background=None location=[Lower Left] bold");
+		}
+	saveAs("tiff", dir3+getTitle);
+	close();
+}
