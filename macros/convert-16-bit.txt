@@ -1,0 +1,43 @@
+requires("1.33s"); 
+dir = getDirectory("Choose a Directory "); 
+setBatchMode(true); 
+count = 0; 
+countFilesBC16(dir);
+n = 0; 
+processFilesBC16(dir); 
+
+function countFilesBC16(dir) { 
+	list = getFileList(dir); 
+	for (i=0; i<list.length; i++) { 
+		if (endsWith(list[i], "/")) 
+			countFilesBC16(""+dir+list[i]);
+		else 
+			count++; 
+	} 
+}
+
+function processFilesBC16(dir) { 
+	list = getFileList(dir); 
+	for (i=0; i<list.length; i++) { 
+		if (endsWith(list[i], "/") && list[i] != "wScaleBar/" && list[i] != "woScaleBar/"){
+			processFilesBC16(""+dir+list[i]); 
+		}
+		else { 
+			showProgress(n++, count); 
+			path = dir+list[i];
+			if (endsWith(path, ".tif") || endsWith(path,".TIF") || endsWith(path,".dm3")) {
+				processFileBC16(n,path); 
+			}
+		} 
+	} 
+}
+
+function processFileBC16(n,path) { 
+	open(path);
+	if(bitDepth() == 32){
+		run("16-bit");
+	}
+	// run("Enhance Contrast", "saturated=0.3");
+	saveAs("tiff", path);
+	close();
+}
